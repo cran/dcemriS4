@@ -29,7 +29,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## 
-## $Id: auditTrail.R 313 2009-12-09 16:30:22Z zeripath $
+## $Id: auditTrail.R 325 2010-01-04 14:48:06Z bjw34032 $
 ##
 
 dcemri.info <- function(type) {
@@ -99,7 +99,8 @@ niftiExtensionToAuditTrail <- function(nim, workingDirectory=NULL,
       oe <- nim@extensions[[oei]]@edata
       nim@extensions[[oei]] <- NULL
       audit.trail(nim) <-
-        niftiAuditTrailSystemNodeEvent(xmlRoot(xmlParse(oe, asText=TRUE)),
+        niftiAuditTrailSystemNodeEvent(xmlRoot(xmlParse(iconv(oe, to="UTF-8"),
+                                                        asText=TRUE)),
                                        type="read",
                                        workingDirectory=workingDirectory,
                                        filename=filename, call=call)
@@ -208,7 +209,8 @@ niftiAuditTrailCreated <- function(history=NULL, call=NULL,
 	## OK, serialize and reParse the history
 	historyChildren <-
           lapply(historyChildren,
-                 function(x) xmlRoot(xmlParse(saveXML(x), asText=TRUE)))
+                 function(x) xmlRoot(xmlParse(iconv(saveXML(x), to="UTF-8"),
+                                              asText=TRUE)))
 	historyNode <- addChildren(historyNode, historyChildren)
 	created <- addChildren(created, historyNode)
       }
