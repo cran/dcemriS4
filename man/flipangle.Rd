@@ -1,7 +1,7 @@
 % Part of the dcemri package for R
 % Distributed under the BSD license: see dcemri/COPYING
 %
-% $Id: flipangle.Rd 191 2009-08-25 15:12:31Z bjw34032 $
+% $Id: flipangle.Rd 332 2010-01-29 16:54:07Z bjw34032 $
 
 \name{Relaxivity}
 \alias{R10.lm}

@@ -29,7 +29,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## 
-## $Id: flipangle.R 112 2009-08-12 13:34:53Z bjw34032 $
+## $Id: flipangle.R 332 2010-01-29 16:54:07Z bjw34032 $
 ##
 
 #############################################################################
@@ -127,7 +127,7 @@ setMethod("R1.fast", signature(flip="array"),
 
   if (verbose)
     cat("  Reconstructing results...", fill=TRUE)
-  R10.array <- M0.array <- array(NA, c(X,Y,Z,1))
+  R10.array <- M0.array <- array(NA, c(X,Y,Z))
   R10.array[flip.mask] <- R10
   M0.array[flip.mask] <- M0
 
@@ -156,6 +156,8 @@ setMethod("CA.fast", signature(dynamic="array"),
     stop("Flip-angle data must be a 4D array.")
   if (!is.logical(dyn.mask))  # Check dyn.mask is logical
     stop("Mask must be logical.")
+  if (length(fangles) != ntim(flip))  # Check that #(flip angles) are equal
+    stop("Number of flip angles must be equal.")
   
   R1est <- R1.fast(flip, dyn.mask, fangles, TR, verbose)
   
@@ -233,7 +235,7 @@ setMethod("CA.fast2", signature(dynamic="array"),
 
   if (verbose)
     cat("  Reconstructing results...", fill=TRUE)
-  R10.array <- M0.array <- array(NA, c(M,N,Z,1))
+  R10.array <- M0.array <- array(NA, c(M,N,Z))
   R10.array[dyn.mask] <- R10
   M0.array[dyn.mask] <- M0
   conc.array <- R1t.array <- array(NA, c(M,N,Z,W))

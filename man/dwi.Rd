@@ -1,7 +1,7 @@
 % Part of the dcemri package for R
 % Distributed under the BSD license: see dcemri/COPYING
 %
-% $Id: $
+% $Id: dwi.Rd 332 2010-01-29 16:54:07Z bjw34032 $
 
 \name{Apparent Diffusion Coefficient}
 \alias{adc.lm}

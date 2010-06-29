@@ -29,7 +29,7 @@
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## 
-## $Id: $
+## $Id: dcemri_map.R 332 2010-01-29 16:54:07Z bjw34032 $
 ##
 
 #############################################################################
@@ -97,6 +97,7 @@ setMethod("dcemri.map", signature(conc="array"),
   }
 
   if (verbose) cat("  Deconstructing data...", fill=TRUE)
+  img.mask <- ifelse(img.mask > 0, TRUE, FALSE)
   conc.mat <- matrix(conc[img.mask], nvoxels)
   conc.mat[is.na(conc.mat)] <- 0
 
