@@ -131,12 +131,23 @@ double convterm(double kep, double t, double* settings)
   return bla;
 }
 
+double deviance(double tau_epsilon, double* conc, double* time, double ktrans, double kep, double vp, int T, double* settings)
+ {
+   int t;
+   double p = 0.5*T*log(tau_epsilon);
+   for (t=0; t<T; t++)
+     {
+       p -= 0.5*tau_epsilon*pow((conc[t])-extraterm(vp,time[t],settings)-ktrans*convterm(kep,time[t],settings),2);
+     }
+   return -2*p;
+ }
+
  
-double log_fc_gamma(double gamma, double tau_epsilon, double tau_gamma, double* conc, double* time, double kep, double vp, int T, double* settings)
+double log_fc_gamma(double gamma, double tau_epsilon, double tau_gamma, double gamma_expected, double* conc, double* time, double kep, double vp, int T, double* settings)
  {
    int t;
    double p = 0.0;
-   p -= 0.5*tau_gamma*gamma*gamma;
+   p -= 0.5*tau_gamma*(gamma-gamma_expected)*(gamma-gamma_expected);
    for (t=0; t<T; t++)
      {
        p -= 0.5*tau_epsilon*pow((conc[t])-extraterm(vp,time[t],settings)-exp(gamma)*convterm(kep,time[t],settings),2);
@@ -144,12 +155,12 @@ double log_fc_gamma(double gamma, double tau_epsilon, double tau_gamma, double* 
    return p;
  }
 
-double update_gamma2(double gamma, double kep, double vp, double tau_gamma, double tau_epsilon, double* conc, double* time, double sigma, int T, double* aif_settings){
+double update_gamma2(double gamma, double kep, double vp, double tau_gamma, double gamma_expected,double tau_epsilon, double* conc, double* time, double sigma, int T, double* aif_settings){
 
   double gamma_new = normal(gamma,sigma);
   double logalpha = 0.0;
-  logalpha +=  log_fc_gamma(gamma_new,tau_epsilon,tau_gamma,conc,time,kep,vp,T,aif_settings);
-  logalpha -= log_fc_gamma(gamma,tau_epsilon,tau_gamma,conc,time,kep,vp,T,aif_settings);
+  logalpha +=  log_fc_gamma(gamma_new,tau_epsilon,tau_gamma,gamma_expected,conc,time,kep,vp,T,aif_settings);
+  logalpha -= log_fc_gamma(gamma,tau_epsilon,tau_gamma,gamma_expected,conc,time,kep,vp,T,aif_settings);
 
 
   if (exp(logalpha)>nulleins())
@@ -162,12 +173,12 @@ double update_gamma2(double gamma, double kep, double vp, double tau_gamma, doub
     }
 }
 
-double log_fc_theta(double theta, double tau_epsilon, double tau_theta, double* conc, double* time,double ktrans, double vp, int T, double* settings)
+double log_fc_theta(double theta, double tau_epsilon, double tau_theta, double theta_expected, double* conc, double* time,double ktrans, double vp, int T, double* settings)
  {
    double p = 0.0;
    int t;
    //   p -= 0.5*tau_theta*(theta+1)*(theta+1);
-   p -= 0.5*tau_theta*theta*theta;
+   p -= 0.5*tau_theta*(theta-theta_expected)*(theta-theta_expected);
    for (t=0; t<T; t++)
      {
        //       p -= 0.5*tau_epsilon*pow((conc[t])-extraterm(vp,time[t],settings)-ktrans*convterm(ktrans/exp(theta),time[t],settings),2);
@@ -175,12 +186,13 @@ double log_fc_theta(double theta, double tau_epsilon, double tau_theta, double* 
      }
    return p;
  }
-double update_theta2(double theta, double ktrans, double vp, double* conc, double* time, double tau_epsilon, double tau_theta, double sigma, int T, double* aif_settings)
+
+double update_theta2(double theta, double ktrans, double vp, double* conc, double* time, double tau_epsilon, double tau_theta, double theta_expected, double sigma, int T, double* aif_settings)
 {
   double theta_new=normal(theta,sigma);
   double logalpha = 0.0;
-  logalpha += log_fc_theta(theta_new,tau_epsilon,tau_theta,conc,time,ktrans,vp,T,aif_settings);
-  logalpha -= log_fc_theta(theta,tau_epsilon,tau_theta,conc,time,ktrans,vp,T,aif_settings);
+  logalpha += log_fc_theta(theta_new,tau_epsilon,tau_theta,theta_expected,conc,time,ktrans,vp,T,aif_settings);
+  logalpha -= log_fc_theta(theta,tau_epsilon,tau_theta,theta_expected,conc,time,ktrans,vp,T,aif_settings);
  
   if (exp(logalpha)>nulleins())
     {
@@ -191,6 +203,7 @@ double update_theta2(double theta, double ktrans, double vp, double* conc, doubl
      return theta;
     }
 }
+
 double log_fc_eta3(double eta, double tau_epsilon, double a_vp, double b_vp, double* conc, double* time, double kep, double ktrans, int T, double* settings)
  {
    double p = 0.0;
@@ -205,6 +218,7 @@ double log_fc_eta3(double eta, double tau_epsilon, double a_vp, double b_vp, dou
    p += (a_vp-1)*log(eta)+(b_vp-1)*log(1-eta);
    return p;
  }
+
 double update_eta3(double vp, double kep, double ktrans, double a_vp, double b_vp, double tau_epsilon, double* conc, double* time, double sigma, int T,double* aif_settings){
   double eta_new = -1;
   while (eta_new>1 || eta_new<0)
@@ -223,6 +237,7 @@ double update_eta3(double vp, double kep, double ktrans, double a_vp, double b_v
       return vp;
     }
 }
+
 double update_tau_epsilon1(double tau, double aa, double bb, double* conc, double vp, double ktrans, double kep, double* time, int T, double* settings)
 {
   int i;
@@ -246,7 +261,8 @@ void dce_bayes_run_single(int* NRI,
 	 double* ab_vp,
 	 double* ab_epsilon, 
 	 double* aif_settings, int* settings, double* time, int* T,
-	 double *ktrans_trace, double* kep_trace, double* vp_trace, double* tau_epsilon_trace)
+         double *ktrans_trace, double* kep_trace, double* vp_trace, double* tau_epsilon_trace,
+         double* deviance_trace)
 	 
 {
   GetRNGstate();
@@ -266,29 +282,25 @@ void dce_bayes_run_single(int* NRI,
   int acc_theta=0;
   int acc_eta=0;
   iter=0;
+  int dev;
 
   while (iter<NRI[0])
     { 
       iter++;
-     temp=update_gamma2(log(ktrans), kep, vp,  tau_gamma[0], tau_epsilon, conc, time, sigmagamma, T[0], aif_settings);
-     
+      temp=update_gamma2(log(ktrans), kep, vp,  tau_gamma[0], tau_gamma[1], tau_epsilon, conc, time, sigmagamma, T[0], aif_settings);
     if (temp!=log(ktrans))
 	{
 	  acc_gamma++;
 	  ktrans=exp(temp);
 	}
       
-    //      temp=update_theta2(log(ktrans/kep), ktrans, vp,  conc, time, tau_epsilon, tau_theta[0], sigmatheta, T[0], aif_settings);
-      temp=update_theta2(log(kep), ktrans, vp,  conc, time, tau_epsilon, tau_theta[0], sigmatheta, T[0], aif_settings);
-      //      if (temp!=log(ktrans/kep))
+    temp=update_theta2(log(kep), ktrans, vp,  conc, time, tau_epsilon, tau_theta[0], tau_theta[1], sigmatheta, T[0], aif_settings);
       if (temp!=log(kep))
 	{
 	  acc_theta++;
-	  //	  kep=ktrans/exp(temp);
 	  kep=exp(temp);
 	}
       
-  
       if (settings[0]==1)
 	{
 	  temp=update_eta3(vp, kep, ktrans, ab_vp[0], ab_vp[1], tau_epsilon, conc, time, sigmaeta, T[0], aif_settings);
@@ -346,6 +358,7 @@ void dce_bayes_run_single(int* NRI,
 	 kep_trace[sample]=kep;
 	 vp_trace[sample]=vp;
 	 tau_epsilon_trace[sample]=tau_epsilon;
+         deviance_trace[sample]=deviance(tau_epsilon, conc, time, ktrans, kep, vp, T[0], aif_settings);
 	 sample++;
        }
 

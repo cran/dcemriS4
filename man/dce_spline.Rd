@@ -24,7 +24,9 @@
               burnin=100, ab.hyper=c(1e-5,1e-5),
               ab.tauepsilon=c(1,1/1000), k=4, p=25, rw=2,
               knots=NULL, nlr=FALSE, t0.compute=FALSE,
-              samples=FALSE, multicore=FALSE, verbose=FALSE, ...) 
+              samples=FALSE, multicore=FALSE, verbose=FALSE, 
+              response=FALSE, fitted=FALSE, 
+              ...) 
 dcemri.spline.single(conc, time, D, time.input, p, rw, knots, k,
                      A, t0.compute=FALSE, nlr=FALSE, nriters=500,
                      thin=5, burnin=100, ab.hyper=c(1e-5,1e-5),
@@ -34,55 +36,66 @@ dcemri.spline.single(conc, time, D, time.input, p, rw, knots, k,
                      samples=FALSE, B=NULL)
 }
 \arguments{
-  \item{conc}{is an array of gadolinium (Gd) concentration.}
-  \item{time}{is a vector of time points from the acquisition.}
-  \item{img.mask}{is a logical array of voxels to fit.}
-  \item{time.input}{is a vector of time points of observed arterial
-    gadolinium (Gd) concentration (default = \sQuote{time}).}
-  \item{model}{is the compartmental model to be used.  Acceptable
-    models include: \dQuote{AATH} or \dQuote{weinmann} (default).}
-  \item{aif}{is the arterial input function.  Values include:
-    \dQuote{tofts.kermode}, \dQuote{fritz.hansen} or \dQuote{observed}.
-    If \dQuote{observed} you must provide the observed concentrations in
-    \sQuote{aif.observed}.}
-  \item{aif.observed}{is a user-defined vector of arterial
-    concentrations observed at \sQuote{time.input}.}
+  \item{conc}{Matrix or array of concentration time series (last
+    dimension must be time).}
+  \item{time}{Time in minutes.}
+  \item{img.mask}{Mask matrix or array. Voxels with \code{mask = 0} will
+    be excluded.}
+  \item{time.input}{Time in minutes for observed arterial
+    input function (default = \sQuote{time}).}
+  \item{aif}{is a character string that identifies the parameters of the
+    arterial input function.  Acceptable values are:
+    \code{tofts.kermode}, \code{fritz.hansen} or \code{observed}.  If
+    \code{observed} you must provide the observed concentrations in
+    \code{aif.observed}.}
+  \item{user}{\ldots}
+  \item{aif.observed}{is the user-defined vector of arterial
+    concentrations observed at \code{time.input} (only for
+    \sQuote{aif}=observed).}
+  \item{silent}{\ldots}
   \item{multicore}{(logical) use the \pkg{multicore} package.}
   \item{verbose}{(logical) allows text-based feedback during execution
     of the function (default = \code{FALSE}).}
-  \item{nlr}{(logical) returns the generated samples.}
-  \item{user}{...}
-  \item{ab.hyper}{...}
+  \item{samples}{If \code{TRUE} output includes samples drawn
+    from the posterior distribution for all parameters.}
+  \item{model.func}{\ldots}
+  \item{model.guess}{\ldots}
+  \item{nlr}{If \code{TRUE}, a response model is fitted to the estimated
+    response function.}
+  \item{model}{Only if \code{nlr = TRUE} Response model fitted to the
+    estimated response function.  Acceptable values include:
+    \code{"AATH"} or \code{"weinmann"} (default).}
+  \item{ab.hyper}{Hyper priors for adaptive smoothness parameter}
   \item{ab.tauepsilon}{Hyper-prior parameters for observation error
     Gamma prior.}
-  \item{p}{...}
-  \item{t0.compute}{...}
-  \item{samples}{If \code{TRUE} output includes samples drawn from the
-    posterior distribution for all parameters.}
-  \item{k}{...}
-  \item{knots}{...}
-  \item{rw}{...}
+  \item{p}{Number of knots of B-Spline basis.}
+  \item{t0.compute}{If \code{TRUE}, the onset time will be estimated
+    from response function.}
+  \item{k}{Order of B-Splines.}
+  \item{knots}{Vector of knots.  Use this if you need unequally spaced
+    knots.}
+  \item{rw}{Order of random walk prior.  Acceptable values are 1 and 2.}
   \item{nriters}{Total number of iterations.}
   \item{thin}{Thining factor.}
   \item{burnin}{Number of iterations for burn-in.}
-  \item{D}{...}
-  \item{B}{...}
-  \item{A}{...}
-  \item{silent}{...}
-  \item{model.func}{...}
-  \item{model.guess}{...}
-  \item{...}{Additional parameters to the function.}
+  \item{response}{If \code{TRUE}, the response functions per voxel are
+    returned.}
+  \item{fitted}{If \code{TRUE}, then fitted time curved per voxel are
+    returned.}
+  \item{A}{\ldots}
+  \item{B}{\ldots}
+  \item{D}{\ldots}
+  \item{\ldots}{\ldots}
 }
 \details{
   See Schmid \emph{et al.} (2009) for more details.
 }
 \value{
-  Parameter estimates and their standard errors are provided for the
-  masked region of the multidimensional array.  All multi-dimensional
-  arrays are provided in \code{nifti} format.
-
-  They include:
-  \item{}{}
+  The maximum of the response function \code{Fp} for the  masked region
+  is provided by default.  Where appropriate, response functions, fitted
+  functions, and parameter estimates (along with their standard  errors)
+  are provided. All multi-dimensional arrays are provided in
+  \code{nifti} format.
 }
 \references{
   Schmid, V., Whitcher, B., Padhani, A.R. and G.-Z. Yang (2009) A

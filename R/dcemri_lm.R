@@ -107,7 +107,25 @@ setMethod("dcemri.lm", signature(conc="array"),
     return(erg)
   }
   
-  model.orton.exp <- function(time, th0, th1, th3, ...) {
+  model.kety.orton.exp <- function(time, th1, th3, ...) {
+    ## Kety model using the exponential AIF from Matthew Orton (ICR)
+
+    ktrans <- exp(th1)
+    kep <- exp(th3)
+
+    T1 <- AB * kep / (kep - muB)
+    T2 <- time * exp(-muB * time) -
+      (exp(-muB * time) - exp(-kep * time)) / (kep - muB)
+    T3 <- AG * kep
+    T4 <- (exp(-muG * time) - exp(-kep * time)) / (kep - muG) -
+      (exp(-muB * time) - exp(-kep * time)) / (kep - muB)
+
+    erg <- ktrans * (T1 * T2 + T3 * T4)
+    erg[time <= 0] <- 0
+    return(erg)
+  }
+  
+  model.extended.orton.exp <- function(time, th0, th1, th3, ...) {
     ## Extended model using the exponential AIF from Matthew Orton (ICR)
     Cp <- function(tt, ...) 
       AB * tt * exp(-muB * tt) + AG * (exp(-muG * tt) - exp(-muB * tt))
@@ -128,9 +146,29 @@ setMethod("dcemri.lm", signature(conc="array"),
     return(erg)
   }
   
-  model.orton.cos <- function(time, th0, th1, th3, ...) {
+ model.kety.orton.cos <- function(time, th1, th3, ...) {
     ## Extended model using the raised cosine AIF from Matthew Orton (ICR)
-    A2 <- function(t, alpha, ...) {
+    A2 <- function(time, alpha, ...) {
+      (1 - exp(-alpha*time)) / alpha - (alpha*cos(muB*time) + muB*sin(muB*time) - alpha*exp(-alpha*time)) / (alpha^2 + muB^2)
+    }
+
+    ktrans <- exp(th1)
+    kep <- exp(th3)
+    tB <- 2*pi/muB
+
+    cp <- ifelse(time <= tB,
+                 aB * (1 - cos(muB*time)) + aB * aG * A2(time, muG),
+                 aB * aG * A2(time, muG) * exp(-muB * (time - tB)))
+    erg <- ifelse(time <= tB,
+                  aB * aG * ktrans / (kep - muG) * ((A2(time,muG) + (kep - muG) / aG - 1) * A2(time,kep)),
+                  aB * aG * ktrans / (kep - muG) * (A2(tB,muG) * exp(-muB * (time - tB)) + ((kep - muG) / aG - 1) * A2(tB,kep) * exp(-kep * (time - tB))))
+    erg[time <= 0] <- 0
+    return(erg)
+  }
+
+  model.extended.orton.cos <- function(time, th0, th1, th3, ...) {
+    ## Extended model using the raised cosine AIF from Matthew Orton (ICR)
+    A2 <- function(time, alpha, ...) {
       (1 - exp(-alpha*time)) / alpha - (alpha*cos(muB*time) + muB*sin(muB*time) - alpha*exp(-alpha*time)) / (alpha^2 + muB^2)
     }
 
@@ -177,15 +215,17 @@ setMethod("dcemri.lm", signature(conc="array"),
            if (! aif %in% c("tofts.kermode","fritz.hansen","empirical"))
              stop("Only aif=\"tofts.kermode\" or aif=\"fritz.hansen\" or aif=\"empirical\" are acceptable AIFs for model=\"weinmann\" or model=\"extended\"", call.=FALSE)
          },
+         kety.orton.exp = ,
          orton.exp = {
            aif <- ifelse(is.null(aif), "orton.exp", aif)
            if (! aif %in% c("orton.exp","user"))
-             stop("Only aif=\"orton.exp\" or aif=\"user\" are acceptable AIFs for model=\"orton.exp\"", call.=FALSE)
+             stop("Only aif=\"orton.exp\" or aif=\"user\" are acceptable AIFs for model=\"orton.exp\" or model=\"kety.orton.exp\"", call.=FALSE)
          },
+         kety.orton.cos = ,
          orton.cos = {
            aif <- ifelse(is.null(aif), "orton.cos", aif)
            if (! aif %in% c("orton.cos","user"))
-             stop("Only aif=\"orton.cos\" or aif=\"user\" are acceptable AIFs for model=\"orton.cos\"", call.=FALSE)
+             stop("Only aif=\"orton.cos\" or aif=\"user\" are acceptable AIFs for model=\"orton.cos\" or model=\"kety.orton.cos\"", call.=FALSE)
          },
          stop("Unknown model: " + model, call.=FALSE))
   
@@ -262,22 +302,34 @@ setMethod("dcemri.lm", signature(conc="array"),
            guess <- c("th0"=-1, "th1"=-1, "th3"=-1)
            Vp <- list(par=rep(NA, nvoxels), error=rep(NA, nvoxels))
         },
+         kety.orton.exp = {
+           ## model <- model.orton.exp
+           func <- function(theta, signal, time, ...)
+             signal - model.kety.orton.exp(time, theta[1], theta[2], ...)
+           guess <- c("th1"=-1, "th3"=-1)
+         },
          orton.exp = {
            ## model <- model.orton.exp
            func <- function(theta, signal, time, ...)
-             signal - model.orton.exp(time, theta[1], theta[2], theta[3], ...)
-           guess <- c("th0"=-1, "th1"=0, "th3"=0.1)
+             signal - model.extended.orton.exp(time, theta[1], theta[2], theta[3], ...)
+           guess <- c("th0"=-1, "th1"=-1, "th3"=-1)
            Vp <- list(par=rep(NA, nvoxels), error=rep(NA, nvoxels))
+         },
+         kety.orton.cos = {
+           ## model <- model.orton.cos
+           func <- function(theta, signal, time, ...)
+             signal - model.kety.orton.cos(time, theta[1], theta[2], ...)
+           guess <- c("th1"=-1, "th3"=-1)
          },
          orton.cos = {
            ## model <- model.orton.cos
            func <- function(theta, signal, time, ...)
-             signal - model.orton.cos(time, theta[1], theta[2], theta[3], ...)
-           guess <- c("th0"=-1, "th1"=0, "th3"=0.1)
+             signal - model.extended.orton.cos(time, theta[1], theta[2], theta[3], ...)
+           guess <- c("th0"=-1, "th1"=-1, "th3"=-1)
            Vp <- list(par=rep(NA, nvoxels), error=rep(NA, nvoxels))
          },
          stop("Model/AIF is not supported."))
-
+       
   require("minpack.lm")
   
   I <- nrow(conc)
@@ -291,12 +343,16 @@ setMethod("dcemri.lm", signature(conc="array"),
       J <- K <- 1
   }
 
-  if (verbose) cat("  Deconstructing data...", fill=TRUE)
+  if (verbose) {
+    cat("  Deconstructing data...", fill=TRUE)
+  }
   img.mask <- ifelse(img.mask > 0, TRUE, FALSE)
   conc.mat <- matrix(conc[img.mask], nvoxels)
   conc.mat[is.na(conc.mat)] <- 0
 
-  if (verbose) cat("  Estimating the kinetic parameters...", fill=TRUE)
+  if (verbose) {
+    cat("  Estimating the kinetic parameters...", fill=TRUE)
+  }
   ktrans <- kep <- list(par=rep(NA, nvoxels), error=rep(NA, nvoxels))
   sse <- rep(NA, nvoxels)
   for (k in 1:nvoxels) {
@@ -315,33 +371,48 @@ setMethod("dcemri.lm", signature(conc="array"),
     }
   }
 
-  if (verbose) cat("  Reconstructing results...", fill=TRUE)
+  if (verbose) {
+    cat("  Reconstructing results...", fill=TRUE)
+  }
   A <- B <- array(NA, c(I,J,K))
   A[img.mask] <- ktrans$par
   B[img.mask] <- ktrans$error
-  ktrans.out <- list(par=A, error=B)
+  ##ktrans.out <- list(par=A, error=B)
+  R <- list(ktrans=A, ktranserror=B, time=time)
+  rm(A,B)
   A <- B <- array(NA, c(I,J,K))
   A[img.mask] <- kep$par
   B[img.mask] <- kep$error
-  kep.out <- list(par=A, error=B)
+  ##kep.out <- list(par=A, error=B)
+  R$kep <- A
+  R$keperror <- B
+  R$ve <- R$ktrans / R$kep
+  rm(A,B)
   if (model %in% c("extended","orton.exp","orton.cos")) {
     A <- B <- array(NA, c(I,J,K))
     A[img.mask] <- Vp$par
     B[img.mask] <- Vp$error
-    Vp.out <- list(par=A, error=B)
+    ##Vp.out <- list(par=A, error=B)
+    R$vp <- A
+    R$vperror <- B
+    rm(A,B)
   }
-  A <- B <- array(NA, c(I,J,K))
+  A <- array(NA, c(I,J,K))
   A[img.mask] <- sse
-  sse.out <- A
+  ##sse.out <- A
+  R$sse <- A
+  rm(A)
   
-  if (model %in% c("extended","orton.exp","orton.cos"))
-    list(ktrans=ktrans.out$par, kep=kep.out$par, ktranserror=ktrans.out$error,
-         keperror=kep.out$error, ve=ktrans.out$par/kep.out$par, vp=Vp.out$par,
-         vperror=Vp.out$error, sse=sse.out, time=time)
-  else
-    list(ktrans=ktrans.out$par, kep=kep.out$par, ktranserror=ktrans.out$error,
-         keperror=kep.out$error, ve=ktrans.out$par/kep.out$par, sse=sse.out,
-         time=time)
+##  if (model %in% c("extended","orton.exp","orton.cos")) {
+##    list(ktrans=ktrans.out$par, kep=kep.out$par, ktranserror=ktrans.out$error,
+##         keperror=kep.out$error, ve=ktrans.out$par/kep.out$par, vp=Vp.out$par,
+##         vperror=Vp.out$error, sse=sse.out, time=time)
+##  } else {
+##    list(ktrans=ktrans.out$par, kep=kep.out$par, ktranserror=ktrans.out$error,
+##         keperror=kep.out$error, ve=ktrans.out$par/kep.out$par, sse=sse.out,
+##         time=time)
+##  }
+  return(R)
 }
 
 

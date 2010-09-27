@@ -14,14 +14,15 @@
   DCE-MRI.
 }
 \usage{
-\S4method{dcemri.bayes}{array}(conc, time, img.mask, model="extended", aif=NULL,
-             user=NULL, nriters=3500, thin=3, burnin=500,
-             tune=267, tau.ktrans=1, tau.kep=tau.ktrans,
+\S4method{dcemri.bayes}{array}(conc, time, img.mask, model="extended",
+             aif=NULL, user=NULL, nriters=3500, thin=3, burnin=500,
+             tune=267, ab.ktrans=c(0,1), ab.kep=ab.ktrans,
              ab.vp=c(1,19), ab.tauepsilon=c(1,1/1000),
-             samples=FALSE, multicore=FALSE, verbose=FALSE, ...)
+             samples=FALSE, multicore=FALSE, verbose=FALSE, dic=FALSE,
+             ...)
 dcemri.bayes.single(conc, time, nriters=3500, thin=3,
-                    burnin=500, tune=267, tau.gamma=1,
-                    tau.theta=1, ab.vp=c(1,19),
+                    burnin=500, tune=267, ab.gamma=c(0,1),
+                    ab.theta=c(0,1), ab.vp=c(1,19),
                     ab.tauepsilon=c(1,1/1000), aif.model=0,
                     aif.parameter=c(2.4,0.62,3,0.016), vp=1)
 }
@@ -40,6 +41,8 @@ dcemri.bayes.single(conc, time, nriters=3500, thin=3,
 	vascular compartment (default)}
       \item{\dQuote{orton.exp}}{Extended model using Orton's exponential
 	AIF}
+      \item{\dQuote{kety.orton.exp}}{Kety model using Orton's exponential
+	AIF}
     }
   }
   \item{aif}{is a character string that identifies the parameters of the
@@ -47,33 +50,39 @@ dcemri.bayes.single(conc, time, nriters=3500, thin=3,
     Acceptable values are: \code{tofts.kermode} (default) or
     \code{fritz.hansen} for the \code{weinmann} and \code{extended}
     models; \code{orton.exp} (default) or \code{user} for the
-    \code{orton.exp} model.}
+     \code{orton.exp} and \code{kety.orton.exp} model.}
   \item{user}{Vector of AIF parameters.  For Tofts and Kermode:
-    \eqn{a_1}, \eqn{m_1}, \eqn{a_2}, \eqn{m_2}; for Orton \emph{et al.}:
-    \eqn{A_b}, \eqn{\mu_b}, \eqn{A_g}, \eqn{\mu_g}.}
+    \eqn{a_1}{a1}, \eqn{m_1}{m1}, \eqn{a_2}{a2}, \eqn{m_2}{m2}; for
+    Orton \emph{et al.}: \eqn{A_b}{Ab}, \eqn{\mu_b}{mub}, \eqn{A_g}{Ag},
+    \eqn{\mu_g}{mug}.} 
   \item{nriters}{Total number of iterations.}
   \item{thin}{Thining factor.}
   \item{burnin}{Number of iterations for burn-in.}
   \item{tune}{Number for iterations for tuning.  The algorithm will be 
     tuned to an acceptance rate between 0.3 and 0.6.}
-  \item{tau.ktrans}{Variance parameter for prior on
-    \eqn{\log(K^{trans})}.}
-  \item{tau.kep}{Variance parameter for prior on \eqn{\log(k_{ep})}.}
+  \item{ab.ktrans}{Mean and variance parameter for Gaussian prior on
+    \eqn{\log(K^{trans})}{log(Ktrans)}.}
+  \item{ab.kep}{Mean and variance parameter for Gaussian prior on
+    \eqn{\log(k_{ep})}{log(kep)}.}
   \item{ab.vp}{Hyper-prior parameters for the Beta prior on
     \eqn{v_p}{vp}.}
+  \item{ab.gamma}{\ldots}
+  \item{ab.theta}{\ldots}
   \item{ab.tauepsilon}{Hyper-prior parameters for observation error
-    Gamma prior.} 
+    Gamma prior.}
   \item{samples}{If \code{TRUE} output includes samples drawn
     from the posterior distribution for all parameters.}
   \item{multicore}{If \code{TRUE} algorithm is parallelized using
     \pkg{multicore}.}
   \item{verbose}{Logical variable (default = \code{FALSE}) that
     allows text-based feedback during execution of the function.}
-  \item{tau.gamma}{...}
-  \item{tau.theta}{...}
-  \item{aif.model}{...}
-  \item{aif.parameter}{...}
-  \item{vp}{...}
+  \item{dic}{If \code{TRUE}, the deviance information criterion (DIC)
+    and effective number of parameters (pD) will be computed.  If
+    \dQuote{samples = TRUE}, then samples of the DIC and pD will be
+    given.}
+  \item{aif.model}{\ldots}
+  \item{aif.parameter}{\ldots}
+  \item{vp}{\ldots}
   \item{...}{Additional parameters to the function.}
 }
 \details{
@@ -96,6 +105,10 @@ dcemri.bayes.single(conc, time, nriters=3500, thin=3,
   \item{vp}{Fractional occupancy by plasma.}
   \item{sigma2}{The residual sum-of-squares from the model fit.}
   \item{time}{Acquisition times (for plotting purposes).}
+  \item{DIC}{Deviance information criterion.}
+  \item{DIC.map}{Contribution to DIC per voxel.}
+  \item{pD}{Effective number of parameters.}
+  \item{pD.map}{Constribution to pD per voxel.}
   Note, not all parameters are available under all models choices.
 }
 \references{
