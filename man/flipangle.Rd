@@ -19,11 +19,12 @@
   converted into contrast agent concentration.
 }
 \usage{
-R10.lm(signal, alpha, TR, guess, nprint=0)
-E10.lm(signal, alpha, guess, nprint=0)
-\S4method{R1.fast}{array}(flip, flip.mask, fangles, TR, verbose=FALSE)
-\S4method{CA.fast}{array}(dynamic, dyn.mask, dangle, flip, fangles, TR, r1=4,
+R10.lm(signal, alpha, TR, guess, control=nls.lm.control())
+E10.lm(signal, alpha, guess, control=nls.lm.control())
+\S4method{R1.fast}{array}(flip, flip.mask, fangles, TR, control=nls.lm.control(),
         verbose=FALSE)
+\S4method{CA.fast}{array}(dynamic, dyn.mask, dangle, flip, fangles, TR, r1=4,
+        control=nls.lm.control(maxiter=200), verbose=FALSE)
 \S4method{CA.fast2}{array}(dynamic, dyn.mask, dangle, flip, fangles, TR, r1=4,
          verbose=FALSE)
 }
@@ -35,12 +36,9 @@ E10.lm(signal, alpha, guess, nprint=0)
     of the MRI data.}
   \item{guess}{is the vector of initial values for the parameters of
     interest: \eqn{m_0}{M0} and \eqn{R_{10}}{R10}.}
-  \item{nprint}{is an integer, that enables controlled printing of
-    iterates if it is positive.  In this case, estimates of \code{par}
-    are printed at the beginning of the first iteration and every
-    \code{nprint} iterations thereafter and immediately prior to return.
-    If \code{nprint} is not positive, no tracing information on the
-    progress of the optimization is produced.}
+  \item{control}{An optional list of control settings for \code{nls.lm}.
+    See \code{nls.lm.control} for the names of the settable control
+    values and their effect.}
   \item{dynamic}{a multidimensional array of contrast agent
     concentrations.  The last dimension is assumed to be temporal, while
     the previous dimenions are assued to be spatial.}
@@ -130,7 +128,7 @@ E10.lm(signal, alpha, guess, nprint=0)
 S0 <- 100
 TR <- 5 / 1000            # seconds
 T1 <- 1.5                 # seconds
-alpha <- seq(2,24,by=2)   # degrees
+alpha <- seq(2, 24, by=2) # degrees
 
 ## Signal intensities for spoiled gradient echo image
 gre <- function(S0, TR, T1, alpha) {
@@ -140,14 +138,12 @@ gre <- function(S0, TR, T1, alpha) {
 set.seed(1234)
 signal <- array(gre(S0, TR, T1, alpha) + rnorm(length(alpha), sd=.15),
                 c(rep(1,3), length(alpha)))
-
 out <- R1.fast(signal, array(TRUE, rep(1,3)), alpha, TR)
 unlist(out)
-
-par(mfrow=c(1,1))
 plot(alpha, signal, xlab="Flip angle", ylab="Signal intensity")
 lines(alpha, gre(S0, TR, T1, alpha), lwd=2, col=1)
 lines(alpha, gre(out$M0, TR, 1/out$R10, alpha), lwd=2, col=2)
+legend("topright", c("True","Estimated"), lwd=2, col=1:2)
 }
 \author{Brandon Whitcher <\email{bjw34032@users.sourceforge.net}>}
 \keyword{misc}

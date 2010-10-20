@@ -14,7 +14,8 @@
 }
 \usage{
 \S4method{dcemri.lm}{array}(conc, time, img.mask, model="extended", aif=NULL,
-          nprint=0, user=NULL, verbose=FALSE, ...)
+          control=nls.lm.control(), user=NULL, multicore=FALSE, verbose=FALSE,
+          ...)
 }
 \arguments{
   \item{conc}{is a multidimensional (1D-4D) array of contrast agent
@@ -35,8 +36,10 @@
 	vascular compartment (default)}
       \item{\dQuote{orton.exp}}{Extended model using Orton's exponential
 	AIF} 
-      \item{\dQuote{orton.cos}}{Extended model using Orton's raised cosine AIF}
-      \item{\dQuote{kety.orton.exp}}{Kety model using Orton's exponential AIF} 
+      \item{\dQuote{orton.cos}}{Extended model using Orton's raised
+	cosine AIF}
+      \item{\dQuote{kety.orton.exp}}{Kety model using Orton's
+	exponential AIF}
       \item{\dQuote{kety.orton.cos}}{Kety model using Orton's raised
 	cosine AIF}
     }
@@ -45,29 +48,30 @@
     type of arterial input function (AIF) used with the above model.
     Acceptable values are:
     \itemize{
-      \item{\code{tofts.kermode}}{(default) for the \code{weinmann} and \code{extended}
-	models}
-      \item{\code{fritz.hansen}}{for the \code{weinmann} and \code{extended}
-	models}
-      \item{\dQuote{empirical}}{for the \code{weinmann} and \code{extended}
-	models}
-      \item{\code{orton.exp}}{(default) for the \code{orton.exp} and \code{kety.orton.exp} model}
-      \item{\code{orton.cos}}{(default) for the	\code{orton.cos} and \code{kety.orton.cos} model.}
-      \item{\code{user}}{for the \code{orton.exp} and \code{orton.cos} model.}
+      \item{\code{tofts.kermode}}{(default) for the \code{weinmann} and
+	\code{extended}	models}
+      \item{\code{fritz.hansen}}{for the \code{weinmann} and
+	\code{extended} models}
+      \item{\dQuote{empirical}}{for the \code{weinmann} and
+	\code{extended} models}
+      \item{\code{orton.exp}}{(default) for the \code{orton.exp} and
+	\code{kety.orton.exp} model} 
+      \item{\code{orton.cos}}{(default) for the	\code{orton.cos} and
+	\code{kety.orton.cos} model.}
+      \item{\code{user}}{for the \code{orton.exp} and \code{orton.cos}
+	model.}
     }
     All AIF models set the parametric form and parameter values --
     except \code{user}, where a set of user-defined parameter values are
     allowed, and \code{empirical}, where a vector of values that fully
     characterize the empirical AIF.
   }
-  \item{nprint}{is an integer, that enables controlled printing of
-    iterates if it is positive.  In this case, estimates of \code{par}
-    are printed at the beginning of the first iteration and every
-    \code{nprint} iterations thereafter and immediately prior to return.
-    If \code{nprint} is not positive, no tracing information on the
-    progress of the optimization is produced.}
-  \item{user}{is a list with the following paramters required: D, AB,
+  \item{control}{is a list of parameters used by \code{nls.lm.control}
+    that are set by default, but may be customized by the user.}
+  \item{user}{is a list with the following parameters required: D, AB,
     muB, AG, muG.}
+  \item{multicore}{is a logical variable (default = \code{FALSE}) that
+    allows parallel processing via \pkg{multicore}.}
   \item{verbose}{is a logical variable (default = \code{FALSE}) that
     allows text-based feedback during execution of the function.}
   \item{...}{Additional parameters to the function.}
@@ -93,12 +97,12 @@
   \item{ktrans}{Transfer rate from plasma to the extracellular,
     extravascular space (EES).}
   \item{kep}{Rate parameter for transport from the EES to plasma.}
-  \item{ve}{Fractional occupancy by EES (the ratio between ktrans and
-    kep).}
+  \item{ve}{Fractional occupancy by EES (the ratio between
+  \eqn{K^{trans}}{Ktrans} and \eqn{k_{ep}}{kep}).}
   \item{vp}{Fractional occupancy by plasma.}
-  \item{ktranserror}{Standard error for ktrans.}
-  \item{keperror}{Standard error for kep.}
-  \item{vperror}{Standard error for vp.}
+  \item{ktranserror}{Standard error for \eqn{K^{trans}}{Ktrans}.}
+  \item{keperror}{Standard error for \eqn{k_{ep}}{kep}.}
+  \item{vperror}{Standard error for \eqn{v_p}{vp}.}
   The residual sum-of-squares is also provided, along with the original
   acquisition times (for plotting purposes).
 }
@@ -152,25 +156,24 @@ data("buckley")
 ## Empirical arterial input function
 img <- array(t(breast$data), c(13,1,1,301))
 time <- buckley$time.min
-aif <- buckley$input
 mask <- array(TRUE, dim(img)[1:3])
 
 ## Estimate kinetic parameters directly from Buckley's empirical AIF
 fit1 <- dcemri.lm(img, time, mask, model="weinmann", aif="empirical",
-                  user=aif)
+                  user=buckley$input)
 fit2 <- dcemri.lm(img, time, mask, model="extended", aif="empirical",
-                  user=aif)
+                  user=buckley$input)
 
 ## Set up breast data for dcemri
 xi <- seq(5, 300, by=3)
 img <- array(t(breast$data)[,xi], c(13,1,1,length(xi)))
 time <- buckley$time.min[xi]
-aif <- buckley$input[xi]
+input <- buckley$input[xi]
 
 ## Generate AIF params using the orton.exp function from Buckley's AIF
-aifparams <- orton.exp.lm(time, aif)
-fit3 <- dcemri.lm(img, time, mask, model="orton.exp",
-                 aif="user", user=aifparams)
+(aifparams <- orton.exp.lm(time, input))
+fit3 <- dcemri.lm(img, time, mask, model="orton.exp", aif="user",
+                  user=aifparams)
 
 ## Scatterplot comparing true and estimated Ktrans values
 plot(breast$ktrans, fit1$ktrans, xlim=c(0,0.75), ylim=c(0,0.75),
@@ -193,6 +196,6 @@ abline(0, 1, lwd=1.5, col=2)
 legend("bottomright", c("extended/empirical","orton.exp/user"), pch=2:3)
 cbind(breast$vp, fit2$vp[,,1], fit3$vp[,,1])
 }
-\author{Brandon Whitcher <\email{bjw34032@users.sourceforge.net}>,
-  Volker Schmid <\email{volkerschmid@users.sourceforge.net}>}
+\author{Brandon Whitcher \email{bjw34032@users.sourceforge.net},
+  Volker Schmid \email{volkerschmid@users.sourceforge.net}}
 \keyword{models}

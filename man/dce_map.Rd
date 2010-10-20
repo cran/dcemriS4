@@ -16,9 +16,8 @@
 \usage{
 \S4method{dcemri.map}{array}(conc, time, img.mask, model="extended", aif=NULL,
              user=NULL, ab.ktrans=c(0,1), ab.kep=ab.ktrans,
-             ab.vp=c(1,19), ab.tauepsilon=c(1,1/1000),
+             ab.vp=c(1,19), ab.tauepsilon=c(1,1/1000), maxit=5000,
              samples=FALSE, multicore=FALSE, verbose=FALSE, ...)
-dcemri.map.single(conc, time, posterior, parameter, transform, start, hyper, aif)
 }
 \arguments{
   \item{conc}{Matrix or array of concentration time series (last
@@ -35,8 +34,8 @@ dcemri.map.single(conc, time, posterior, parameter, transform, start, hyper, aif
 	vascular compartment (default)}
       \item{\dQuote{orton.exp}}{Extended model using Orton's exponential
 	AIF} 
-      \item{\dQuote{kety.orton.exp}}{Kety model using Orton's exponential
-	AIF} 
+      \item{\dQuote{kety.orton.exp}}{Kety model using Orton's
+	exponential AIF} 
       \item{\dQuote{orton.cos}}{Extended model using Orton's raised
 	cosine AIF}
       \item{\dQuote{kety.orton.cos}}{Kety model using Orton's raised
@@ -48,18 +47,21 @@ dcemri.map.single(conc, time, posterior, parameter, transform, start, hyper, aif
     Acceptable values are: \code{tofts.kermode} (default) or
     \code{fritz.hansen} for the \code{weinmann} and \code{extended}
     models; \code{orton.exp} (default) or \code{user} for the
-    \code{orton.exp} model and \code{orton.exp} model; \code{user} for the
-    \code{orton.cos} model and \code{orton.cos} model.}
+    \code{orton.exp} model and \code{orton.exp} model; \code{user} for
+    the \code{orton.cos} model and \code{orton.cos} model.}
   \item{user}{Vector of AIF parameters.  For Tofts and Kermode:
     \eqn{a_1}, \eqn{m_1}, \eqn{a_2}, \eqn{m_2}; for Orton \emph{et al.}:
     \eqn{A_b}, \eqn{\mu_b}, \eqn{A_g}, \eqn{\mu_g}.}
   \item{ab.ktrans}{Mean and variance parameter for Gaussian prior on
     \eqn{\log(K^{trans})}.}
-  \item{ab.kep}{Mean and variance parameter for Gaussian prior on \eqn{\log(k_{ep})}.}
+  \item{ab.kep}{Mean and variance parameter for Gaussian prior on
+    \eqn{\log(k_{ep})}.}
   \item{ab.vp}{Hyper-prior parameters for the Beta prior on
     \eqn{v_p}{vp}.}
   \item{ab.tauepsilon}{Hyper-prior parameters for observation error
-    Gamma prior.} 
+    Gamma prior.}
+  \item{maxit}{The maximum number of iterations for the optimization
+    procedure.}
   \item{samples}{If \code{TRUE} output includes samples drawn
     from the posterior distribution for all parameters.}
   \item{multicore}{If \code{TRUE} algorithm is parallelized using
@@ -67,15 +69,10 @@ dcemri.map.single(conc, time, posterior, parameter, transform, start, hyper, aif
   \item{verbose}{Logical variable (default = \code{FALSE}) that
     allows text-based feedback during execution of the function.}
   \item{...}{Additional parameters to the function.}
-  \item{posterior}{...}
-  \item{parameter}{...}
-  \item{transform}{...}
-  \item{start}{...}
-  \item{hyper}{...}
 }
 \details{
-  Implements maximum-a-posteriori (MAP) estimation for the Bayesian
-  model in Schmid \emph{et al.} (2006).
+  Implements \emph{maximum a posteriori} (MAP) estimation for the
+  Bayesian model in Schmid \emph{et al.} (2006).
 }
 \value{
   Parameter estimates and their standard errors are provided for the
@@ -110,25 +107,20 @@ mask <- array(TRUE, dim(img)[1:3])
 time <- buckley$time.min[xi]
 
 ## MAP estimation with Fritz-Hansen default AIF
-fit.map <- dcemri.map(img, time, mask, aif="fritz.hansen",
-                      nriters=5000)
-
-plot(breast$ktrans, fit.map$ktrans, xlim=c(0,1), ylim=c(0,1),
-     xlab=expression(paste("True ", K^{trans})),
-     ylab=expression(paste("Estimated ", K^{trans}, " (MAP)")))
-abline(0, 1, lwd=1.5, col=2)
-
-\dontrun{
+fit.map <- dcemri.map(img, time, mask, aif="fritz.hansen")
+## Nonlinear regression with Fritz-Hansen default AIF
 fit.lm <- dcemri.lm(img, time, mask, aif="fritz.hansen")
 
 plot(breast$ktrans, fit.map$ktrans, xlim=c(0,1), ylim=c(0,1),
      xlab=expression(paste("True ", K^{trans})),
      ylab=expression(paste("Estimated ", K^{trans})))
 points(breast$ktrans, fit.lm$ktrans, pch=3)
-abline(0, 1, lwd=1.5, col="red")
-legend("bottomright", c("MAP Estimation (fritz-hansen)",
-                        "Levenburg-Marquardt (fritz.hansen)", pch=c(1,3)))
+abline(0, 1, lwd=2, col=2)
+legend("bottomright", c("MAP Estimation (fritz.hansen)",
+                        "Levenburg-Marquardt (fritz.hansen)"), pch=c(1,3))
+
+cbind(breast$kep, fit.lm$kep[,,1], fit.map$kep[,,1])
+cbind(breast$ktrans, fit.lm$ktrans[,,1], fit.map$ktrans[,,1])
 }
-}
-\author{Volker Schmid <\email{volkerschmid@users.sourceforge.net}>}
+\author{Volker Schmid \email{volkerschmid@users.sourceforge.net}}
 \keyword{models}
