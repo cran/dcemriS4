@@ -81,7 +81,8 @@ setMethod("dcemri.lm", signature(conc="array"),
   }
   func.model <- compartmentalModel(model)
   func <- function(theta, signal, time, ...) {
-    signal - func.model(time, theta, p)
+    out <- signal - func.model(time, theta, p)
+    out[!is.na(out)]
   }
   nvoxels <- sum(img.mask)
   switch(model,

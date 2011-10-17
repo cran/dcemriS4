@@ -148,18 +148,6 @@ setMethod("R1.fast", signature(flip="array"),
     }
   }
 
-  ##R10 <- M0 <- numeric(nvoxels)
-  ##for (k in 1:nvoxels) {
-  ##  fit <- E10.lm(flip.mat[k,], fangles.mat[k,],
-  ##                guess=c(1, mean(flip.mat[k,])), control)
-  ##  if (fit$info == 1 || fit$info == 2 || fit$info == 3) {
-  ##    R10[k] <- log(fit$E10) / -TR
-  ##    M0[k] <- fit$m0
-  ##  } else {
-  ##    R10[k] <- M0[k] <- NA
-  ##  }
-  ##}
-
   if (verbose) {
     cat("  Reconstructing results...", fill=TRUE)
   }
@@ -230,7 +218,7 @@ setGeneric("CA.fast2", function(dynamic, ...) standardGeneric("CA.fast2"))
 setMethod("CA.fast2", signature(dynamic="array"),
 	  function(dynamic, dyn.mask, dangle, flip, fangles, TR, r1=4,
                    verbose=FALSE) 
-          .dcemriWrapper("CA.fast2", dynamic, dyn.mask, dangle, flip,
+          .dcemriwrapper("CA.fast2", dynamic, dyn.mask, dangle, flip,
                          fangles, TR, r1, verbose))
 
 #############################################################################
@@ -275,12 +263,18 @@ setMethod("CA.fast2", signature(dynamic="array"),
   if (verbose) {
     cat("  Calculating R10 and M0...", fill=TRUE)
   }
+  x <- flip.mat / tan(pi * fangles.mat / 180)
+  x <- ifelse(is.finite(x), x, 0)
+  y <- flip.mat / sin(pi * fangles.mat / 180)
+  y <- ifelse(is.finite(y), y, 0)
   for (k in 1:nvoxels) {
-    x <- c(flip.mat[k,1] / tan(pi * fangles.mat[k,1] / 180),
-           flip.mat[k,2] / tan(pi * fangles.mat[k,2] / 180))
-    y <- c(flip.mat[k,1] / sin(pi * fangles.mat[k,1] / 180),
-           flip.mat[k,2] / sin(pi * fangles.mat[k,2] / 180))
-    fit <- lsfit(x, y)$coefficients
+    #x <- c(flip.mat[k,1] / tan(pi * fangles.mat[k,1] / 180),
+    #       flip.mat[k,2] / tan(pi * fangles.mat[k,2] / 180))
+    #x <- ifelse(is.finite(x), x, 0)
+    #y <- c(flip.mat[k,1] / sin(pi * fangles.mat[k,1] / 180),
+    #       flip.mat[k,2] / sin(pi * fangles.mat[k,2] / 180))
+    #y <- ifelse(is.finite(y), y, 0)
+    fit <- lsfit(x[k, ], y[k, ])$coefficients
     R10[k] <- log(fit[2]) / -TR
     M0[k] <- fit[1] / (1 - fit[2])
   }
