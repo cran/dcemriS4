@@ -40,8 +40,8 @@ setGeneric("dcemri.bayes",
            function(conc, ...) standardGeneric("dcemri.bayes"))
 setMethod("dcemri.bayes", signature(conc="array"), 
           function(conc, time, img.mask, model="extended",
-                         aif=NULL, user=NULL, nriters=3500, thin=3,
-                         burnin=500, tune=267, ab.ktrans=c(0,1),
+                         aif=NULL, user=NULL, nriters=3000, thin=3,
+                         burnin=1000, tune=267, ab.ktrans=c(0,1),
                          ab.kep=ab.ktrans, ab.vp=c(1,19),
                          ab.tauepsilon=c(1,1/1000), samples=FALSE,
                          multicore=FALSE, verbose=FALSE, dic=FALSE, ...)
@@ -50,8 +50,8 @@ setMethod("dcemri.bayes", signature(conc="array"),
                         ab.kep, ab.vp, ab.tauepsilon, samples,
                         multicore, verbose, dic, ...))
 
-.dcemri.bayes.single <- function(conc, time, nriters=3500, thin=3,
-                                 burnin=500, tune=267, ab.gamma=c(0,1),
+.dcemri.bayes.single <- function(conc, time, nriters=3000, thin=3,
+                                 burnin=1000, tune=267, ab.gamma=c(0,1),
                                  ab.theta=c(0,1), ab.vp=c(1,19),
                                  ab.tauepsilon=c(1,1/1000), aif.model=0,
                                  aif.parameter=c(2.4,0.62,3,0.016), vp=1) {
@@ -59,7 +59,7 @@ setMethod("dcemri.bayes", signature(conc="array"),
   if (sum(is.na(conc)) > 0) {
     return(NA)
   } else {
-    n <- floor((nriters - burnin) / thin)
+    n <- floor((nriters - burnin) / thin) 
     if (tune > nriters/2) {
       tune <- floor(nriters/2)
     }
@@ -79,7 +79,8 @@ setMethod("dcemri.bayes", signature(conc="array"),
                     as.double(n0),
                     as.double(n0),
                     as.double(n0), 
-                    as.double(n0), 
+                    as.double(n0),
+                    as.integer(n),
                     PACKAGE="dcemriS4")    
     list("ktrans"= singlerun[[11]],
          "kep"= singlerun[[12]],
@@ -90,8 +91,8 @@ setMethod("dcemri.bayes", signature(conc="array"),
 }
 
 .dcemri.bayes <- function(conc, time, img.mask, model="extended",
-                          aif=NULL, user=NULL, nriters=3500, thin=3,
-                          burnin=500, tune=267, ab.ktrans=c(0,1),
+                          aif=NULL, user=NULL, nriters=3000, thin=3,
+                          burnin=1000, tune=267, ab.ktrans=c(0,1),
                           ab.kep=ab.ktrans, ab.vp=c(1,19),
                           ab.tauepsilon=c(1,1/1000), samples=FALSE,
                           multicore=FALSE, verbose=FALSE, dic=FALSE,
@@ -162,7 +163,7 @@ setMethod("dcemri.bayes", signature(conc="array"),
          weinmann = ,
          extended = {
            aif <- ifelse(is.null(aif), "tofts.kermode", aif)
-           aif.names <- c("tofts.kermode","fritz.hansen","empirical")
+           aif.names <- c("tofts.kermode","fritz.hansen","empirical","user")
            if (! aif %in% aif.names) {
              stop(sprintf("Only aif=\"%s\" or aif=\"%s\" or aif=\"%s\" are acceptable AIFs for model=\"weinmann\" or model=\"extended\"", aif.names[1], aif.names[2], aif.names[3]), call.=FALSE)
            }
@@ -231,7 +232,7 @@ setMethod("dcemri.bayes", signature(conc="array"),
                            burnin=burnin, tune=tune, ab.gamma=ab.ktrans,
                            ab.theta=ab.kep, ab.vp=ab.vp,
                            ab.tauepsilon=ab.tauepsilon, aif.model=aif.model,
-                           aif.parameter=aif.parameter, vp=vp.do)
+                           aif.parameter=aif.parameter, vp=vp.do, mc.preschedule=TRUE)
   } else {
     bayes.list <- lapply(conc.list, FUN=.dcemri.bayes.single, time=time,
                          nriters=nriters, thin=thin, burnin=burnin,
@@ -246,7 +247,7 @@ setMethod("dcemri.bayes", signature(conc="array"),
     cat("  Extracting results...", fill=TRUE)
   }
   
-  n <- (nriters - burnin) / thin # number of samples from posterior
+  n <- floor((nriters - burnin) / thin)  # number of samples from posterior
   ktrans <- kep <- list(par=rep(NA, nvoxels), error=rep(NA, nvoxels))
   sigma2 <- rep(NA, nvoxels)
   if (model %in% c("extended", "orton.exp", "orton.cos")) {
@@ -266,7 +267,7 @@ setMethod("dcemri.bayes", signature(conc="array"),
   }
 
   for (k in 1:nvoxels) {
-    index <- nvoxels * (k-1) + (1:n)
+    index <- (k-1)*n + (1:n)
     ktrans$par[k] <- median(bayes.list[[k]]$ktrans)
     kep$par[k] <- median(bayes.list[[k]]$kep)
     ktrans$error[k] <- sd(bayes.list[[k]]$ktrans)
@@ -365,11 +366,12 @@ setMethod("dcemri.bayes", signature(conc="array"),
       for (j in 1:J) {
         for (k in 1:K) {
           if (img.mask[i,j,k]) {
-            par <- list("ktrans"=ktrans.out$par[i,j,k],
-                        "kep"=kep.out$par[i,j,k])
+            par <- NULL
             if (vp.do) {
               par["vp"] <- Vp.out$par[i,j,k]
-            }
+            }		# Caution: order of assignment is important!!!
+            par["ktrans"]=ktrans.out$par[i,j,k]
+            par["kep"]=kep.out$par[i,j,k]
             fitted[i,j,k,] <- kineticModel(time, par, model=model, aif=aif)
           }
         }
