@@ -1,5 +1,5 @@
 3ac18bd14c82e022a160669ebec554e8 *COPYING
-bf1d1d2aa4f88aa4208b48c3bc546486 *DESCRIPTION
+604a56d376b0286ac0fe6914f35f511b *DESCRIPTION
 a467e4099281b5c4b4d83f4dc0f31472 *NAMESPACE
 abd0487cbbae7ab242cccc2dcb20a250 *R/aif.R
 b454f89f488aa8a557770fc86d2354a1 *R/cpmg.R
@@ -16,11 +16,12 @@ e22728b19e75ee35a0aeffb8002afe63 *R/model.R
 ad4cab37ef2618029afc872c492bbc0f *R/template_matching.R
 fa80dd5984e6905f178f61c8e3dd26da *R/wrappers.R
 d5d8380ffafd7388060ee7a146dfb576 *R/zzz.R
-03b84674c44c995472abd967d66213cc *data/buckley.rda
+63f7477f4f49f7140d6a313b583a1d43 *data/buckley.rda
 7c4f021a984bef52724d8edb68431197 *data/buckley.txt.gz
 6f8d28f7f5cd0dbfd701f1825c91d410 *inst/CITATION
+251cbe63f2828f8a511766d08d49913f *inst/doc/dcemriS4.R
 e4e188b9273b169d49d12bf05be9fe47 *inst/doc/dcemriS4.Rnw
-128e042d632be9244e4fbbc48b8927c5 *inst/doc/dcemriS4.pdf
+51c8a1948d92dd879f3e4dda82c0b8d6 *inst/doc/dcemriS4.pdf
 bf93e1b070e6fb6b3a9473bb328e9bca *inst/nifti/SDAM_ep2d_120deg_26slc.nii.gz
 c2c5e6620e8c0cca654e224539daeb83 *inst/nifti/SDAM_ep2d_60deg_26slc.nii.gz
 ecf046a2b0446015a7b90baa94fb4d96 *inst/nifti/SDAM_smooth.nii.gz
@@ -51,13 +52,12 @@ e41c6eb72a34fa1cede1de49e05d627f *man/extract.Rd
 ac92820686caaac0f328b12f590b6479 *man/kineticmodel.Rd
 654e408d0b36564c603bebed05556a32 *man/rcbv.Rd
 fa566ca3f80c346e93e12c4e700f24ef *man/shift3D.Rd
+cbe9f0d9268d5729a5fff6077e9586e0 *src/Makevars
 8b5229dfd0bc760e3db81adb5c21e749 *src/baymri.c
 c12cc5e46e92bab1f095f6f0c28ecbfe *src/dcesp.c
-9afd654658a1fd54b85384f810630685 *src/dtrsv.f
-d10bc70f31f5f87c46515e6792fb8365 *src/fortran.f
 e631e28aa2ed8dc63a6426100db4336e *src/zufall.c
 0255f513bd54ce2d9d95e2b4380f4d9b *src/zufall.h
-ca88c7e60c0ae685fa6789bc009443e6 *tests/Examples/dcemriS4-Ex.Rout.save
+4c19aa19cecebcfe0e95285c62d3f06b *tests/Examples/dcemriS4-Ex.Rout.save
 b411fac06e49eb2e9eb4ea06ecd482d5 *vignettes/281949_19040721_axtensor_D.png
 ae79b1054ad7b2c75aa594c87885165a *vignettes/281949_19040721_perfusion_Fp_spline.png
 6a82bb0ff28860adb48979b81613055f *vignettes/281949_19040721_perfusion_kep.png
