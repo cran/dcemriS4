@@ -28,7 +28,7 @@ mask <- (rowSums(sdam60, dims=3) > 64)
 ###################################################
 ### code chunk number 3: dam+png
 ###################################################
-png("sdam.png", width=2*480, height=2*480)
+png("sdam.png", width=480, height=480)
 
 
 ###################################################
@@ -74,7 +74,7 @@ R1 <- R1.fast(flip, maskzi, fanglesB1, TR, verbose=TRUE)
 ###################################################
 ### code chunk number 7: t1estimation+png
 ###################################################
-png("t1_phantom.png", width=2*480, height=2*480)
+png("t1_phantom.png", width=480, height=480)
 
 
 ###################################################
@@ -102,7 +102,7 @@ pmask <- nifti(array(t1pmask[,,25], dim(t1pmask))) # repeat slice 25
 ###################################################
 ### code chunk number 11: t1estimation+boxplots
 ###################################################
-pdf(file="boxplots.pdf", width=6, height=6)
+pdf(file="boxplots.pdf", width=5, height=5)
 T1 <- c(0.484,0.350,1.07,0.648,0.456,1.07,0.660,1.543,1.543,0.353)
 par(mfrow=c(1,1), mar=c(5,4,4,2)+.1)
 boxplot(split(1/drop(R1$R10), as.factor(drop(pmask)))[-1], 
@@ -123,7 +123,7 @@ fit.aif <- with(aifparams,
 ###################################################
 ### code chunk number 13: buckley.aif+figure
 ###################################################
-pdf(file="buckley_aif.pdf", width=6, height=6)
+pdf(file="buckley_aif.pdf", width=5, height=5)
 with(buckley, plot(time.min, input, type="l", lwd=2, xlab="Time (minutes)", 
                    ylab=""))
 with(buckley, lines(time.min, fit.aif, lwd=2, col=2))
@@ -204,7 +204,7 @@ dev.off()
 ### code chunk number 21: RiderNeuroMRI+lm4 (eval = FALSE)
 ###################################################
 ## png(file=paste(paste(perf, "ktrans", sep="_"), "png", sep="."), 
-##     width=2*480, height=2*480)
+##     width=480, height=480)
 
 
 ###################################################
@@ -224,29 +224,29 @@ dev.off()
 ## fit.lm$sse <- readNIfTI(paste(perf, "sse", sep="_"))
 ## zrx <- c(32,256)
 ## png(file=paste(paste(perf, "ktrans7", sep="_"), "png", sep="."), 
-##     width=2*480, height=2*480)
+##     width=480, height=480)
 ## overlay(as(dynamic[x,y,,], "nifti"), 
 ##         ifelse(mask[x,y,], fit.lm$ktrans[x,y,], NA), z=7, w=11, 
 ##         zlim.x=zrx, zlim.y=c(0,0.1), plot.type="single")
 ## dev.off()
 ## png(file=paste(paste(perf, "kep", sep="_"), "png", sep="."), 
-##     width=2*480, height=2*480)
+##     width=480, height=480)
 ## overlay(as(dynamic[x,y,,], "nifti"), 
 ##         ifelse(mask[x,y,], fit.lm$kep[x,y,], NA), z=7, w=11, 
 ##         zlim.x=zrx, zlim.y=c(0,1.25), plot.type="single")
 ## dev.off()
 ## png(file=paste(paste(perf, "vp", sep="_"), "png", sep="."), 
-##     width=2*480, height=2*480)
+##     width=480, height=480)
 ## overlay(as(dynamic[x,y,,], "nifti"), ifelse(mask[x,y,], fit.lm$vp[x,y,], NA),
 ##         z=7, w=11, zlim.x=zrx, zlim.y=c(0,0.03), plot.type="single")
 ## dev.off()
 ## png(file=paste(paste(perf, "ve", sep="_"), "png", sep="."), 
-##     width=2*480, height=2*480)
+##     width=480, height=480)
 ## overlay(as(dynamic[x,y,,], "nifti"), ifelse(mask[x,y,], fit.lm$ve[x,y,], NA),
 ##         z=7, w=11, zlim.x=zrx, zlim.y=c(0,0.3), plot.type="single")
 ## dev.off()
 ## png(file=paste(paste(perf, "sse", sep="_"), "png", sep="."), 
-##     width=2*480, height=2*480)
+##     width=480, height=480)
 ## overlay(as(dynamic[x,y,,], "nifti"), ifelse(mask[x,y,], fit.lm$sse[x,y,], NA),
 ##         z=7, w=11, zlim.x=zrx, zlim.y=c(0,0.05), plot.type="single")
 ## dev.off()
@@ -281,7 +281,7 @@ dev.off()
 ### code chunk number 27: RiderNeuroMRI+map4 (eval = FALSE)
 ###################################################
 ## png(file=paste(paste(perf, "ktrans", "map", sep="_"), "png", sep="."), 
-##     width=2*480, height=2*480)
+##     width=480, height=480)
 ## overlay(as(dynamic[x,y,,], "nifti"), 
 ##         ifelse(mask[x,y,], fit.map$ktrans[x,y,], NA),
 ##         z=7, w=11, zlim.x=zrx, zlim.y=c(0,0.1), plot.type="single")
@@ -330,20 +330,20 @@ dev.off()
 ###################################################
 ## fit.bayes <- list(ktrans=readNIfTI(paste(perf, "ktrans","bayes", sep="_")))
 ## png(file=paste(paste(perf, "ktrans", "bayes", sep="_"), "png", sep="."), 
-##     width=2*480, height=2*480)
+##     width=480, height=480)
 ## overlay(as(dynamic[x,y,,], "nifti"), 
 ##         ifelse(mask[x,y,], fit.bayes$ktrans[x,y,], NA), z=7, w=11, 
 ##         zlim.x=zrx, zlim.y=c(0,0.1), plot.type="single")
 ## dev.off()
 ## fit.bayes$ktranserror <- readNIfTI(paste(perf, "ktrans","bayes","sd", sep="_"))
 ## png(file=paste(paste(perf, "ktrans", "bayes", "sd", sep="_"), "png", sep="."), 
-##     width=2*480, height=2*480)
+##     width=480, height=480)
 ## overlay(as(dynamic[x,y,,], "nifti"), 
 ##         ifelse(mask[x,y,], fit.bayes$ktranserror[x,y,], NA), z=7, w=11, 
 ##         zlim.x=zrx, zlim.y=c(0,0.0075), plot.type="single")
 ## dev.off()
 ## png(file=paste(paste(perf, "ktrans", "bayes", "cv", sep="_"), "png", sep="."), 
-##     width=2*480, height=2*480)
+##     width=480, height=480)
 ## overlay(as(dynamic[x,y,,], "nifti"), 
 ##         ifelse(mask[x,y,], (fit.bayes$ktranserror/fit.bayes$ktrans)[x,y,], NA),
 ##         z=7, w=11, zlim.x=zrx, zlim.y=c(0,0.2), plot.type="single")
@@ -368,13 +368,13 @@ dev.off()
 ###################################################
 ## fit.spline <- list(ktrans=readNIfTI(paste(perf, "ktrans","spline", sep="_")))
 ## png(file=paste(paste(perf, "ktrans", "spline", sep="_"), "png", sep="."), 
-##     width=2*480, height=2*480)
+##     width=480, height=480)
 ## overlay(as(dynamic[x,y,,], "nifti"), 
 ##         ifelse(mask[x,y,], fit.spline$ktrans[x,y,], NA), z=7, w=11, 
 ##         zlim.x=zrx, zlim.y=c(0,0.1), plot.type="single")
 ## dev.off()
 ## png(file=paste(paste(perf, "Fp", "spline", sep="_"), "png", sep="."), 
-##     width=2*480, height=2*480)
+##     width=480, height=480)
 ## fit.spline$Fp <- readNIfTI(paste(perf, "Fp","spline", sep="_"))
 ## overlay(as(dynamic[x,y,,], "nifti"), 
 ##         ifelse(mask[x,y,], fit.spline$Fp[x,y,], NA), z=7, w=11, 
@@ -401,7 +401,7 @@ dev.off()
 ###################################################
 ## fit.adc <- list(D=readNIfTI(paste(tensor, "D", sep="_")))
 ## png(file=paste(paste(tensor, "D", sep="_"), "png", sep="."), 
-##     width=2*480, height=2*480)
+##     width=480, height=480)
 ## overlay(as(dwi[,,17:20,], "nifti"),
 ##         ifelse(tmask[,,17:20], fit.adc$D[,,17:20], NA), zlim.x=c(32,1024), 
 ##         zlim.y=c(0.0005,0.003))
