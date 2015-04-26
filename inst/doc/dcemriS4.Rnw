@@ -19,7 +19,7 @@
 \newcommand{\bh}{\mathbf{h}}
 
 %% almost as usual
-\author{Brandon Whitcher\\Pfizer Worldwide R{\&}D \And 
+\author{Brandon Whitcher\\Mango Solutions \And 
         Volker J. Schmid\\Ludwig-Maximilians Universit\"at M\"unchen}
 \title{Quantitative Analysis of Dynamic Contrast-Enhanced and Diffusion-Weighted Magnetic Resonance Imaging for Oncology in \proglang{R}}
 
@@ -75,11 +75,12 @@ available in the public domain.
 %% in the following format:
 \Address{
   Brandon Whitcher\\
-  Pfizer Worldwide Research \& Development\\
-  610 Main Street\\
-  Cambridge, MA 02139, United States\\
-  E-mail: \email{bwhitcher@gmail.com}\\
-  URL: \url{http://www2.imperial.ac.uk/~bwhitche}, \url{http://www.dcemri.com}\\
+  Mango Solutions\\
+  Office 202, Second Floor\\
+  14 Greville Street\\
+  London EC1N 8SB, United Kingdom\\
+  E-mail: \email{bwhitcher@mango-solutions.com}\\
+  URL: \url{http://www2.imperial.ac.uk/~bwhitche}, \url{http://www.dcemri.org}\\
   
   Volker J. Schmid\\
   Bioimaging group\\
@@ -272,7 +273,7 @@ multiplicative factor relative to the low flip angle using the
 saturated double-angle method \citep{cun-pau-nay:saturated}.  Note,
 repeated acquisitions (five) of each flip angle were obtained and force
 the additional \code{rowMeans} step to average the results from the
-function \code{dam} (double-angle method) in the code below.
+function \code{doubleAngleMethod} in the code below.
   
 <<doubleanglemethod>>=
 f60 <- system.file(file.path("nifti", "SDAM_ep2d_60deg_26slc.nii.gz"), 
@@ -281,7 +282,7 @@ sdam60 <- readNIfTI(f60)
 f120 <- system.file(file.path("nifti", "SDAM_ep2d_120deg_26slc.nii.gz"),
                     package="dcemriS4")
 sdam120 <- readNIfTI(f120)
-sdam.image <- rowMeans(dam(sdam60, sdam120, 60), dims=3)
+sdam.image <- rowMeans(doubleAngleMethod(sdam60, sdam120, 60), dims=3)
 mask <- (rowSums(sdam60, dims=3) > 64)
 @ 
 <<dam+png,echo=FALSE,results=hide>>=
@@ -397,7 +398,7 @@ t1pmask <- readNIfTI(fpmask)
 pmask <- nifti(array(t1pmask[,,25], dim(t1pmask))) # repeat slice 25
 @ 
 <<t1estimation+boxplots,echo=FALSE,results=hide>>=
-pdf(file="boxplots.pdf", width=5, height=5)
+pdf(file="boxplots.pdf", width=6, height=6)
 T1 <- c(0.484,0.350,1.07,0.648,0.456,1.07,0.660,1.543,1.543,0.353)
 par(mfrow=c(1,1), mar=c(5,4,4,2)+.1)
 boxplot(split(1/drop(R1$R10), as.factor(drop(pmask)))[-1], 
@@ -523,7 +524,7 @@ fit.aif <- with(aifparams,
                 aif.orton.exp(buckley$time.min, AB, muB, AG, muG))
 @
 <<buckley.aif+figure,echo=FALSE,results=hide>>=
-pdf(file="buckley_aif.pdf", width=5, height=5)
+pdf(file="buckley_aif.pdf", width=6, height=6)
 with(buckley, plot(time.min, input, type="l", lwd=2, xlab="Time (minutes)", 
                    ylab=""))
 with(buckley, lines(time.min, fit.aif, lwd=2, col=2))
@@ -931,7 +932,7 @@ genomic data.  The NBIA provides the scientific community with public
 access to DICOM images, image markup, annotations, and rich metadata.
 The DCE-MRI and DW-MRI data analyzed here were downloaded from the
 ``RIDER Neuro MRI'' collection
-(\url{https://wiki.nci.nih.gov/display/CIP/RIDER}).
+(\url{http://wiki.nci.nih.gov/display/CIP/RIDER}).
 
 \subsection{Dynamic contrast-enhanced MRI}
 
@@ -1605,7 +1606,7 @@ efficiently.
 The \pkg{dcemriS4} package is available from CRAN
 (\url{http://CRAN.R-project.org}) and also from SourceForge
 (\url{http://sourceforge.net/projects/dcemri}) under a BSD license.
-The website \url{http://www.dcemri.com} has been established as a
+The website \url{http://www.dcemri.org} has been established as a
 convenient front end to the software development project and news
 items are regularly provided on the blog
 (\url{http://dcemri.blogspot.com}).

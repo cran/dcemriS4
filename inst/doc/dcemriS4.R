@@ -21,7 +21,7 @@ sdam60 <- readNIfTI(f60)
 f120 <- system.file(file.path("nifti", "SDAM_ep2d_120deg_26slc.nii.gz"),
                     package="dcemriS4")
 sdam120 <- readNIfTI(f120)
-sdam.image <- rowMeans(dam(sdam60, sdam120, 60), dims=3)
+sdam.image <- rowMeans(doubleAngleMethod(sdam60, sdam120, 60), dims=3)
 mask <- (rowSums(sdam60, dims=3) > 64)
 
 
@@ -102,7 +102,7 @@ pmask <- nifti(array(t1pmask[,,25], dim(t1pmask))) # repeat slice 25
 ###################################################
 ### code chunk number 11: t1estimation+boxplots
 ###################################################
-pdf(file="boxplots.pdf", width=5, height=5)
+pdf(file="boxplots.pdf", width=6, height=6)
 T1 <- c(0.484,0.350,1.07,0.648,0.456,1.07,0.660,1.543,1.543,0.353)
 par(mfrow=c(1,1), mar=c(5,4,4,2)+.1)
 boxplot(split(1/drop(R1$R10), as.factor(drop(pmask)))[-1], 
@@ -123,7 +123,7 @@ fit.aif <- with(aifparams,
 ###################################################
 ### code chunk number 13: buckley.aif+figure
 ###################################################
-pdf(file="buckley_aif.pdf", width=5, height=5)
+pdf(file="buckley_aif.pdf", width=6, height=6)
 with(buckley, plot(time.min, input, type="l", lwd=2, xlab="Time (minutes)", 
                    ylab=""))
 with(buckley, lines(time.min, fit.aif, lwd=2, col=2))

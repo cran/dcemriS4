@@ -33,6 +33,29 @@
 ## $Id:$
 ##
 
+#' Parameters for Arterial Input Functions
+#' 
+#' Specification of parameters for arterial input functions (AIFs)
+#' 
+#' See \code{\link{kineticModel}} for more information.  
+#' 
+#' @param type is one of the following character strings associated with an
+#' AIF: 
+#' \itemize{ 
+#' \item\code{tofts.kermode} 
+#' \item\code{fritz.hansen}
+#' \item\code{orton.exp} 
+#' \item\code{orton.cos} 
+#' \item\code{user}
+#' \item\code{empirical}
+#' }
+#' @param user is a vector of estimated AIF parameters or the empirical AIF
+#' values.
+#' @return A vector of parameter values that are appropriate for the model selected.  
+#' @author Brandon Whitcher \email{bwhitcher@@gmail.com}
+#' @seealso \code{\link{compartmentalModel}}, \code{\link{dcemri.lm}}
+#' @keywords misc
+#' @export aifParameters
 aifParameters <- function(type, user=NULL) {
   switch(type,
          tofts.kermode = list(D=0.1, a1=3.99, m1=0.144, a2=4.78, m2=0.0111),
@@ -44,6 +67,43 @@ aifParameters <- function(type, user=NULL) {
          stop("AIF parameters must be specified!"))
 }
 
+
+#' Compartmental Models for Kinetic Parameter Estimation
+#' 
+#' A selection of parametric models are provided that combine a compartmental
+#' model for tissue and a functional form of the arterial input function.
+#' 
+#' Parametric models from the DCE-MRI literature are provided to the user for
+#' kinetic parameter estimation.  All models, with the exception of those
+#' marked \sQuote{empirical} incorporate a parametric model for the arterial
+#' input function (AIF).
+#' 
+#' @param type is a character string that identifies the type of compartmental
+#' model to be used.  Acceptable models include: 
+#' \describe{
+#' \item{"weinmann"}{Weinmann AIF convolved with a single compartment
+#' (Kety) model} 
+#' \item{"extended"}{Kety model extended with additional vascular 
+#' compartment (default)} 
+#' \item{"orton.exp"}{Extended model using Orton's exponential arterial 
+#' input function}
+#' \item{"orton.cos"}{Extended model using Orton's raised cosine arterial
+#' input function} 
+#' \item{"kety.orton.exp"}{Kety model using Orton's exponential arterial 
+#' input function} 
+#' \item{"kety.orton.cos"}{Kety model using Orton's raised cosine 
+#' arterial input function}
+#' \item{"weinmann.empirical"}{User-specified empirical AIF convolved
+#' with a single compartment model} 
+#' \item{"extended.empirical"}{Extended model with user-specified 
+#' empirical arterial input function} 
+#' }
+#' @return A function.
+#' @author Brandon Whitcher \email{bwhitcher@@gmail.com}
+#' @seealso \code{\link{aifParameters}}, \code{\link{dcemri.bayes}},
+#' \code{\link{dcemri.lm}}, \code{\link{dcemri.map}}
+#' @keywords misc
+#' @export compartmentalModel
 compartmentalModel <- function(type) {
   switch(type,
          weinmann =
@@ -199,6 +259,19 @@ compartmentalModel <- function(type) {
          })
 }
 
+#' Convolution of Exponential Functions
+#' 
+#' ...
+#' 
+#' ...
+#' 
+#' @param input ...
+#' @param k1 ...
+#' @param k2 ...
+#' @return The convolved time series.  
+#' @author Brandon Whitcher \email{bwhitcher@@gmail.com}
+#' @keywords misc
+#' @export expConv
 expConv <- function(input, k1, k2) {
   k1input <- k1 * input
   if (k2 == 0) {

@@ -2,13 +2,13 @@
 ##
 ## Copyright (c) 2009,2010 Brandon Whitcher and Volker Schmid
 ## All rights reserved.
-## 
+##
 ## Redistribution and use in source and binary forms, with or without
 ## modification, are permitted provided that the following conditions are
 ## met:
-## 
+##
 ##     * Redistributions of source code must retain the above copyright
-##       notice, this list of conditions and the following disclaimer. 
+##       notice, this list of conditions and the following disclaimer.
 ##     * Redistributions in binary form must reproduce the above
 ##       copyright notice, this list of conditions and the following
 ##       disclaimer in the documentation and/or other materials provided
@@ -16,7 +16,7 @@
 ##     * The names of the authors may not be used to endorse or promote
 ##       products derived from this software without specific prior
 ##       written permission.
-## 
+##
 ## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 ## "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 ## LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -28,16 +28,111 @@
 ## THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 ## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-## 
+##
 ## $Id: dcemri_spline.R 332 2010-01-29 16:54:07Z bjw34032 $
 ##
 
 #############################################################################
 ## setGeneric("dcemri.spline")
 #############################################################################
-
-setGeneric("dcemri.spline",
-           function(conc, ...) standardGeneric("dcemri.spline"))
+#' Bayesian P-Splines for Dynamic Contrast-Enhanced MRI Data
+#' 
+#' Quantitative analysis of DCE-MRI typically involves the convolution of an
+#' arterial input function (AIF) with a nonlinear pharmacokinetic model of the
+#' contrast agent concentration.  This function takes a semi-parametric
+#' penalized spline smoothing approach, with which the AIF is convolved with a
+#' set of B-splines to produce a design matrix using locally adaptive smoothing
+#' parameters based on Bayesian penalized spline models (P-splines).
+#' 
+#' See Schmid \emph{et al.} (2009) for more details.
+#' 
+#' @aliases dcemri.spline dcemri.spline,array-method dcemri.spline.single
+#' @param conc Matrix or array of concentration time series (last dimension
+#' must be time).
+#' @param ... Additional variables defined by the method.  
+#' @param time Time in minutes.
+#' @param img.mask Mask matrix or array. Voxels with \code{mask = 0} will be
+#' excluded.
+#' @param time.input Time in minutes for observed arterial input function
+#' (default = \sQuote{time}).
+#' @param aif is a character string that identifies the parameters of the
+#' arterial input function.  Acceptable values are: \code{tofts.kermode},
+#' \code{fritz.hansen} or \code{observed}.  If \code{observed} you must provide
+#' the observed concentrations in \code{aif.observed}.
+#' @param user \ldots{}
+#' @param aif.observed is the user-defined vector of arterial concentrations
+#' observed at \code{time.input} (only for \sQuote{aif}=observed).
+#' @param multicore (logical) use the \pkg{parallel} package.
+#' @param verbose (logical) allows text-based feedback during execution of the
+#' function (default = \code{FALSE}).
+#' @param samples If \code{TRUE} output includes samples drawn from the
+#' posterior distribution for all parameters.
+#' @param nlr If \code{TRUE}, a response model is fitted to the estimated
+#' response function.
+#' @param model Only if \code{nlr = TRUE} Response model fitted to the
+#' estimated response function.  Acceptable values include: \code{"AATH"} or
+#' \code{"weinmann"} (default).
+#' @param ab.hyper Hyper priors for adaptive smoothness parameter
+#' @param ab.tauepsilon Hyper-prior parameters for observation error Gamma
+#' prior.
+#' @param p Number of knots of B-Spline basis.
+#' @param t0.compute If \code{TRUE}, the onset time will be estimated from
+#' response function.
+#' @param k Order of B-Splines.
+#' @param knots Vector of knots.  Use this if you need unequally spaced knots.
+#' @param rw Order of random walk prior.  Acceptable values are 1 and 2.
+#' @param nriters Total number of iterations.
+#' @param thin Thining factor.
+#' @param burnin Number of iterations for burn-in.
+#' @param response If \code{TRUE}, the response functions per voxel are
+#' returned.
+#' @param fitted If \code{TRUE}, then fitted time curved per voxel are
+#' returned.
+#' @return The maximum of the response function \code{Fp} for the masked region
+#' is provided by default.  Where appropriate, response functions, fitted
+#' functions, and parameter estimates (along with their standard errors) are
+#' provided. All multi-dimensional arrays are provided in \code{nifti} format.
+#' @author Volker Schmid \email{volkerschmid@@users.sourceforge.net}
+#' @seealso \code{\link{dcemri.bayes}}, \code{\link{dcemri.lm}},
+#' \code{\link{dcemri.map}}
+#' @references 
+#' Schmid, V., Whitcher, B., Padhani, A.R. and G.-Z. Yang (2009) A
+#' semi-parametric technique for the quantitative analysis of dynamic
+#' contrast-enhanced MR images based on Bayesian P-splines, \emph{IEEE
+#' Transactions on Medical Imaging}, \bold{28} (6), 789-798.
+#' @keywords models
+#' @examples
+#' 
+#' data("buckley")
+#' xi <- seq(5, 300, by=5)
+#' img <- array(t(breast$data)[,xi], c(13,1,1,60))
+#' mask <- array(TRUE, dim(img)[1:3])
+#' time <- buckley$time.min[xi]
+#' 
+#' ## Generate AIF params using the orton.exp function from Buckley's AIF
+#' aif <- buckley$input[xi]
+#' 
+#' fit.spline <- dcemri.spline(img, time, mask, aif="fritz.hansen",
+#'                             nriters=125, thin=3, burnin=25, nlr=TRUE)
+#' fit.spline.aif <- dcemri.spline(img, time, mask, aif="observed",
+#'                                 aif.observed=aif, nriters=125, thin=3,
+#'                                 burnin=25, nlr=TRUE)
+#' 
+#' plot(breast$ktrans, fit.spline$ktrans, xlim=c(0,1), ylim=c(0,1),
+#'      xlab=expression(paste("True ", K^{trans})),
+#'      ylab=expression(paste("Estimated ", K^{trans})))
+#' points(breast$ktrans, fit.spline.aif$ktrans, pch=2)
+#' abline(0, 1, lwd=1.5, col="red")
+#' legend("right", c("fritz.hansen", "observed"), pch=1:2)
+#' 
+#' @export
+#' @docType methods
+#' @rdname dcemri.spline-methods
+setGeneric("dcemri.spline", function(conc, ...) standardGeneric("dcemri.spline"))
+#' @export
+#' @rdname dcemri.spline-methods
+#' @aliases dcemri.spline,array-method
+#' @useDynLib dcemriS4 dce_spline_run
 setMethod("dcemri.spline", signature(conc="array"),
           function(conc, time, img.mask, time.input=time,
                    model="weinmann", aif="tofts.kermode",
@@ -45,7 +140,7 @@ setMethod("dcemri.spline", signature(conc="array"),
                    thin=5, burnin=100, ab.hyper=c(1e-5,1e-5),
                    ab.tauepsilon=c(1,1/1000), k=4, p=25, rw=2,
                    knots=NULL, nlr=FALSE, t0.compute=FALSE,
-                   samples=FALSE, multicore=FALSE, verbose=FALSE, 
+                   samples=FALSE, multicore=FALSE, verbose=FALSE,
 		   response=FALSE, fitted=FALSE, ...)
           .dcemriWrapper("dcemri.spline", conc, time, img.mask, time.input,
                          model, aif, user, aif.observed, nriters, thin,
@@ -76,7 +171,7 @@ setMethod("dcemri.spline", signature(conc="array"),
   ##MAX <- array(0, c(samplesize))
   tauepsilon <- rep(1000, samplesize) # array(1000, c(samplesize))
   burnin <- min(burnin, samplesize)
-  
+
   result <- .C("dce_spline_run",
                as.integer(1),
                as.integer(burnin),
@@ -108,7 +203,7 @@ setMethod("dcemri.spline", signature(conc="array"),
   ##
   ## Why is this run twice?!?
   ##
-  
+
   result <- .C("dce_spline_run",
                as.integer(samplesize),
                as.integer(thin),
@@ -147,7 +242,7 @@ setMethod("dcemri.spline", signature(conc="array"),
     d2 <- apply(d, 1, median, na.rm=TRUE)
     du <- min(which(d1 > 0))
     ## beta.abl <- beta.abl2 <- rep(0, p)
-    B2 <- splineDesign(knots, time.input, k-2)
+    B2 <- splines::splineDesign(knots, time.input, k-2)
     B2 <- B2[,(1:p)+1]
 
     for (j in 1:samplesize) {
@@ -158,7 +253,7 @@ setMethod("dcemri.spline", signature(conc="array"),
       }
       beta.abl[p] <- 0
       ABL2 <- A %*% B2 %*% beta.abl
-      du2 <- time[du] - d2[du] / ABL2[du]  
+      du2 <- time[du] - d2[du] / ABL2[du]
       t0[j] <- du2
     }
     if (sum(!is.na(t0)) == 0) {
@@ -211,11 +306,11 @@ setMethod("dcemri.spline", signature(conc="array"),
       }
       return(fit)
     }
-    
-    if (multicore && require("parallel")) {
-      out <- mclapply(fitted, nls.lm.single, par=model.guess,
-                           fn=fcn, fcall=model.func, model=model,
-                           time=time-t0)
+
+    if (multicore) {
+      out <- parallel::mclapply(fitted, nls.lm.single, par=model.guess,
+                                fn=fcn, fcall=model.func, model=model,
+                                time=time-t0)
     } else {
       out <- lapply(fitted, nls.lm.single, par=model.guess,
                          fn=fcn, fcall=model.func, model=model,
@@ -270,7 +365,7 @@ setMethod("dcemri.spline", signature(conc="array"),
                           samples=FALSE, multicore=FALSE, verbose=FALSE,
                           response=FALSE, fitted=FALSE, ...) {
 
-  ## dcemri.spline - a function for fitting Bayesian Penalty Splines to 
+  ## dcemri.spline - a function for fitting Bayesian Penalty Splines to
   ## DCE-MRI images and computing kinetic parameters
   ##
   ## authors: Volker Schmid, Brandon Whitcher
@@ -330,10 +425,10 @@ setMethod("dcemri.spline", signature(conc="array"),
   nvoxels <- sum(img.mask)
   I <- nrow(conc)
   J <- ncol(conc)
-  K <- nsli(conc)
+  K <- oro.nifti::nsli(conc)
   T <- length(time)
   Ti <- length(time.input)
-  
+
   if (!is.numeric(dim(conc))) {
     I <- J <- K <- 1
   } else {
@@ -345,7 +440,7 @@ setMethod("dcemri.spline", signature(conc="array"),
       }
     }
   }
-  
+
   if (verbose) {
     cat("  Deconstructing data...", fill=TRUE)
   }
@@ -364,7 +459,7 @@ setMethod("dcemri.spline", signature(conc="array"),
     },
     fritz.hansen = {
       D <- 1; a1 <- 2.4; a2 <- 0.62; m1 <- 3.0; m2 <- 0.016
-      input <- D*(a1*exp(-m1*time)+a2*exp(-m2*time))	 
+      input <- D*(a1*exp(-m1*time)+a2*exp(-m2*time))
     },
     observed = {
       input <- aif.observed
@@ -401,7 +496,7 @@ setMethod("dcemri.spline", signature(conc="array"),
       }
       E <- exp(logE)
       F <- exp(logF)
-      ve <- exp(logve)      
+      ve <- exp(logve)
       kep <- E * F/ve
       erg <- E * exp(-kep*(time-TC))
       erg[time<TC] <- 1 # - time[time<TC2]*(1-E) / TC
@@ -414,7 +509,7 @@ setMethod("dcemri.spline", signature(conc="array"),
     model.func[[2]] <- function(time, logF, logE, logve) {
       E <- exp(logE)
       F <- exp(logF)
-      ve <- exp(logve)      
+      ve <- exp(logve)
       kep <- E * F / ve
       erg <- E * exp(-kep * time)
       erg <- erg * F
@@ -452,19 +547,19 @@ setMethod("dcemri.spline", signature(conc="array"),
   A[is.na(A)] <- 0
   D <- A %*% B
   ## T <- length(time)
-  
+
   if (verbose) {
     cat("  Estimating the parameters...", fill=TRUE)
   }
 
-  if (multicore && require("parallel")) {
-    fit <- mclapply(conc.list, FUN=.dcemri.spline.single, time=time,
-                    D=D, time.input=time.input, p=p, rw=rw, knots=knots,
-                    k=k, A=A, nriters=nriters, thin=thin, burnin=burnin,
-                    ab.hyper=ab.hyper, ab.tauepsilon=ab.tauepsilon,
-                    t0.compute=t0.compute, nlr=nlr, multicore=TRUE,
-                    model=model, model.func=model.func,
-                    model.guess=model.guess, samples=samples, B=B)
+  if (multicore) {
+    fit <- parallel::mclapply(conc.list, FUN=.dcemri.spline.single, time=time,
+                              D=D, time.input=time.input, p=p, rw=rw, knots=knots,
+                              k=k, A=A, nriters=nriters, thin=thin, burnin=burnin,
+                              ab.hyper=ab.hyper, ab.tauepsilon=ab.tauepsilon,
+                              t0.compute=t0.compute, nlr=nlr, multicore=TRUE,
+                              model=model, model.func=model.func,
+                              model.guess=model.guess, samples=samples, B=B)
   } else {
     fit <- lapply(conc.list, FUN=.dcemri.spline.single, time=time, D=D,
                   time.input=time.input, p=p, rw=rw, knots=knots, k=k,
@@ -474,7 +569,7 @@ setMethod("dcemri.spline", signature(conc="array"),
                   model=model, model.func=model.func,
                   model.guess=model.guess, samples=samples, B=B)
   }
-  
+
   if (verbose) {
     cat("  Reconstructing results...", fill=TRUE)
   }
@@ -589,7 +684,7 @@ setMethod("dcemri.spline", signature(conc="array"),
       fitted.sample[k,,j] <- D %*% beta.sample[k,,j]
     }
   }
-  
+
   if ((response || fitted) && samples) {
     beta <- array(NA, c(I,J,K,p,samplesize))     # a 5-dimensional array!!!
   }
@@ -620,7 +715,7 @@ setMethod("dcemri.spline", signature(conc="array"),
     E.med[img.mask] <- E
     F.med[img.mask] <- F
     TC.med[img.mask] <- TC
-  } 
+  }
   if (samples) {
     ktrans <- ve <- array(NA, c(I,J,K,samplesize))
     for (i in 1:samplesize) {
@@ -670,7 +765,7 @@ if (fitted || response) {
       if (fitted)
         fitted.med[,,,j][img.mask] <- median(fitted.sample[,j,])
       }
-    if (I > 1) 
+    if (I > 1)
     for (j in 1:T) {
       if (response)
         response.med[,,,j][img.mask] <- apply(response.sample[,j,], 1, median)
@@ -678,7 +773,7 @@ if (fitted || response) {
         fitted.med[,,,j][img.mask] <- apply(fitted.sample[,j,], 1, median)
       }
     if (samples)
-    for (i in 1:samplesize) 
+    for (i in 1:samplesize)
     for (j in 1:T) {
       if (response)
         response[,,,j,i][img.mask] <- response.sample[,j,i]
